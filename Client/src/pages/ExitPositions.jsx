@@ -13,6 +13,7 @@ import {
   Zap,
   Activity,
   Layers,
+  Clock,
 } from "lucide-react";
 import usePolling from "@/hooks/usePolling";
 import { API } from "@/api/endpoint";
@@ -464,8 +465,16 @@ export default function ExitPositions() {
                           {pos.type}
                         </span>
                       </div>
-                      <div className="text-[11px] font-mono text-slate-400 mt-0.5">
-                        Ticket #{pos.ticket} • {pos.time}
+                      <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-500 mt-1">
+                        <span>Ticket #{pos.ticket}</span>
+                        <span>•</span>
+                        <span
+                          className="inline-flex items-center gap-1 font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded text-[10px]"
+                          title={`Opened at: ${pos.time}`}
+                        >
+                          <Clock className="w-3 h-3 text-indigo-500" />
+                          <span>Holding: {pos.holding_time || "0s"}</span>
+                        </span>
                       </div>
                     </div>
 

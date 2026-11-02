@@ -1,5 +1,22 @@
+import time
 import MetaTrader5 as mt5
 from datetime import datetime
+
+
+def _format_holding_time(seconds: float) -> str:
+    sec = max(0, int(seconds))
+    days = sec // 86400
+    hours = (sec % 86400) // 3600
+    minutes = (sec % 3600) // 60
+    s = sec % 60
+
+    if days > 0:
+        return f"{days}d {hours}h" if hours > 0 else f"{days}d"
+    if hours > 0:
+        return f"{hours}h {minutes}m"
+    if minutes > 0:
+        return f"{minutes}m {s}s"
+    return f"{s}s"
 
 
 def _calc_volume_usd(symbol, lots, price):
@@ -69,13 +86,18 @@ def get_open_positions():
 
             time_str = datetime.fromtimestamp(pos_dict["time"]).strftime("%Y-%m-%d %H:%M:%S")
 
+            holding_sec = max(0, int(time.time() - pos_dict["time"]))
+            holding_time_str = _format_holding_time(holding_sec)
+
             symbol_info = mt5.symbol_info(symbol)
             contract_size = symbol_info.trade_contract_size if symbol_info else 100000.0
 
             positions_list.append({
                 "ticket": pos_dict["ticket"],
                 "time": time_str,
-                "timestamp": pos_dict["time"],
+                "timestamp": int(pos_dict["time"]),
+                "holding_sec": holding_sec,
+                "holding_time": holding_time_str,
                 "symbol": symbol,
                 "type": pos_type,
                 "volume": lots,

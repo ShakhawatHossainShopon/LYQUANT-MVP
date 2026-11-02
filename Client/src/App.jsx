@@ -1,6 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
-// Your page components
+// Page components
 import Dashboard from "@/pages/Dashboard";
 import Portfolio from "@/pages/Portfolio";
 import Positions from "@/pages/Positions";
@@ -9,6 +9,8 @@ import News from "@/pages/News";
 import Correlation from "@/pages/Correlation";
 import AssetList from "@/pages/AssetList";
 import MyAssets from "@/pages/MyAssets";
+import Charts from "@/pages/Charts";
+import RiskManagement from "@/pages/RiskManagement";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
 // Define the router structure
@@ -33,6 +35,10 @@ const router = createBrowserRouter([
         element: <Positions />,
       },
       {
+        path: "/risk-management",
+        element: <RiskManagement />,
+      },
+      {
         path: "/exit-positions",
         element: <ExitPositions />,
       },
@@ -51,6 +57,10 @@ const router = createBrowserRouter([
       {
         path: "/my-assets",
         element: <MyAssets />,
+      },
+      {
+        path: "/charts",
+        element: <Charts />,
       },
     ],
   },

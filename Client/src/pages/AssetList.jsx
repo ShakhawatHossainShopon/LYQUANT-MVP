@@ -6,6 +6,9 @@ import {
   RefreshCw,
   AlertTriangle,
   Layers,
+  Link as LinkIcon,
+  X,
+  ExternalLink,
 } from "lucide-react";
 import usePolling from "@/hooks/usePolling";
 import { API } from "@/api/endpoint";
@@ -21,21 +24,77 @@ export default function AssetList() {
   const [optimisticTracked, setOptimisticTracked] = useState({});
   const [isUpdating, setIsUpdating] = useState({});
 
+  // Add Asset modal state
+  const [modalAsset, setModalAsset] = useState(null);
+  const [chartLinkInput, setChartLinkInput] = useState("");
+  const [modalSubmitting, setModalSubmitting] = useState(false);
+
   const assets = useMemo(() => response?.data || [], [response?.data]);
 
-  // Handle toggling asset tracking in SQLite
-  const handleToggle = async (symbol, name) => {
+  // Open modal to add asset and configure chart link
+  const handleOpenAddModal = (asset) => {
+    setModalAsset(asset);
+    setChartLinkInput(asset.chart_link || "");
+  };
+
+  // Submit adding asset with chart link
+  const handleConfirmAdd = async (e) => {
+    e?.preventDefault();
+    if (!modalAsset) return;
+
+    const symbol = modalAsset.symbol;
+    const name = modalAsset.description;
+    const chartLink = chartLinkInput.trim();
+
+    setIsUpdating((prev) => ({ ...prev, [symbol]: true }));
+    setModalSubmitting(true);
+
+    // Optimistically track
+    setOptimisticTracked((prev) => ({
+      ...prev,
+      [symbol]: { is_tracked: true, chart_link: chartLink },
+    }));
+
+    try {
+      const res = await fetch(API.toggleAsset, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symbol, name, chart_link: chartLink }),
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        setOptimisticTracked((prev) => ({
+          ...prev,
+          [symbol]: {
+            is_tracked: json.data.is_tracked,
+            chart_link: json.data.chart_link ?? chartLink,
+          },
+        }));
+      }
+    } catch {
+      // Revert on error
+      setOptimisticTracked((prev) => {
+        const next = { ...prev };
+        delete next[symbol];
+        return next;
+      });
+    } finally {
+      setIsUpdating((prev) => ({ ...prev, [symbol]: false }));
+      setModalSubmitting(false);
+      setModalAsset(null);
+      setChartLinkInput("");
+    }
+  };
+
+  // Directly remove / toggle off if already added
+  const handleToggleOff = async (symbol, name) => {
     if (isUpdating[symbol]) return;
 
-    // Optimistically toggle
-    const currentStatus =
-      optimisticTracked[symbol] !== undefined
-        ? optimisticTracked[symbol]
-        : assets.find((a) => a.symbol === symbol)?.is_tracked ?? false;
-
-    const nextStatus = !currentStatus;
-    setOptimisticTracked((prev) => ({ ...prev, [symbol]: nextStatus }));
     setIsUpdating((prev) => ({ ...prev, [symbol]: true }));
+    setOptimisticTracked((prev) => ({
+      ...prev,
+      [symbol]: { is_tracked: false, chart_link: "" },
+    }));
 
     try {
       const res = await fetch(API.toggleAsset, {
@@ -47,12 +106,15 @@ export default function AssetList() {
       if (json.success && json.data) {
         setOptimisticTracked((prev) => ({
           ...prev,
-          [symbol]: json.data.is_tracked,
+          [symbol]: { is_tracked: json.data.is_tracked, chart_link: "" },
         }));
       }
     } catch {
-      // Revert on error
-      setOptimisticTracked((prev) => ({ ...prev, [symbol]: currentStatus }));
+      setOptimisticTracked((prev) => {
+        const next = { ...prev };
+        delete next[symbol];
+        return next;
+      });
     } finally {
       setIsUpdating((prev) => ({ ...prev, [symbol]: false }));
     }
@@ -60,13 +122,14 @@ export default function AssetList() {
 
   // Filter and sort assets
   const filteredAssets = useMemo(() => {
-    let result = assets.map((a) => ({
-      ...a,
-      is_tracked:
-        optimisticTracked[a.symbol] !== undefined
-          ? optimisticTracked[a.symbol]
-          : a.is_tracked,
-    }));
+    let result = assets.map((a) => {
+      const opt = optimisticTracked[a.symbol];
+      return {
+        ...a,
+        is_tracked: opt !== undefined ? opt.is_tracked : a.is_tracked,
+        chart_link: opt !== undefined ? opt.chart_link : a.chart_link || "",
+      };
+    });
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -110,8 +173,7 @@ export default function AssetList() {
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Browse available MT5 tradeable assets and add them to your custom
-            watchlist.
+            Browse tradeable assets, add them to your watchlist, and attach custom chart links.
           </p>
         </div>
 
@@ -232,32 +294,33 @@ export default function AssetList() {
                         {asset.spread_pips} pips
                       </td>
 
-                      {/* Actions: Add Asset Toggle ONLY (Open Position removed) */}
+                      {/* Actions: Add Asset (opens modal) or Added toggle */}
                       <td className="py-4 px-6 text-center">
-                        <div className="flex items-center justify-center">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleToggle(asset.symbol, asset.description)
-                            }
-                            className={`px-3 py-1.5 rounded-lg font-medium text-xs transition-all cursor-pointer flex items-center gap-1.5 shadow-xs ${
-                              isAdded
-                                ? "bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100"
-                                : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
-                            }`}
-                          >
-                            {isAdded ? (
-                              <>
-                                <Check className="w-3.5 h-3.5 text-indigo-600" />
-                                <span>Added</span>
-                              </>
-                            ) : (
-                              <>
-                                <Plus className="w-3.5 h-3.5 text-slate-500" />
-                                <span>Add Asset</span>
-                              </>
-                            )}
-                          </button>
+                        <div className="flex items-center justify-center gap-2">
+                          {isAdded ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleToggleOff(asset.symbol, asset.description)
+                              }
+                              className="px-3 py-1.5 rounded-lg font-medium text-xs transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 group"
+                              title="Click to remove from My Assets"
+                            >
+                              <Check className="w-3.5 h-3.5 text-indigo-600 group-hover:hidden" />
+                              <X className="w-3.5 h-3.5 text-rose-600 hidden group-hover:inline" />
+                              <span className="group-hover:hidden">Added</span>
+                              <span className="hidden group-hover:inline">Remove</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAddModal(asset)}
+                              className="px-3 py-1.5 rounded-lg font-medium text-xs transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 border border-slate-200"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Add Asset</span>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -320,6 +383,77 @@ export default function AssetList() {
           </div>
         )}
       </div>
+
+      {/* Add Asset Modal with Chart Link */}
+      {modalAsset && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-modal-backdrop">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-modal-content">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/60">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                  <LinkIcon className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">
+                    Add Asset to Watchlist
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-mono">
+                    {modalAsset.symbol} ({modalAsset.description})
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setModalAsset(null)}
+                className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmAdd} className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Chart Link (TradingView, Broker, or Web Chart)
+                </label>
+                <div className="relative">
+                  <LinkIcon className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="url"
+                    value={chartLinkInput}
+                    onChange={(e) => setChartLinkInput(e.target.value)}
+                    placeholder="https://www.tradingview.com/chart/..."
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono text-slate-900 transition-all"
+                    autoFocus
+                  />
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Optional or direct URL. You will be able to click <strong>Open Chart</strong> from My Assets and the Charts page.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setModalAsset(null)}
+                  className="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={modalSubmitting}
+                  className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>{modalSubmitting ? "Adding..." : "Confirm & Add"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -129,7 +129,7 @@ export default function Dashboard() {
             className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-xs transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
           >
             <Activity className="w-3.5 h-3.5 text-slate-500" />
-            <span>Drawdown Alerts</span>
+            <span>SL Caps</span>
           </Link>
           <button
             type="button"
@@ -326,8 +326,14 @@ export default function Dashboard() {
                         <div className="text-sm font-bold text-slate-900">
                           {pos.symbol}
                         </div>
-                        <div className="text-[10px] text-slate-400">
-                          #{pos.ticket} • {pos.volume.toFixed(2)} Lots
+                        <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                          <span>#{pos.ticket} • {pos.volume.toFixed(2)} Lots</span>
+                          {pos.holding_time && (
+                            <>
+                              <span>•</span>
+                              <span className="text-indigo-600 font-medium">Held: {pos.holding_time}</span>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>

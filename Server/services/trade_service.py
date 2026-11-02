@@ -50,12 +50,23 @@ def calc_trade_specs(symbol: str, lots: float = 0.01):
         est_margin = round(margin_buy, 2) if margin_buy is not None else 0.0
         est_margin_usd = round(est_margin / 100.0, 2) if is_cent else est_margin
 
+        point = s.point or (10 ** -s.digits)
+        tick_size = s.trade_tick_size or point
+        tick_value = s.trade_tick_value or 1.0
+
         return {
             "symbol": symbol,
             "lots": lots,
             "bid": bid,
             "ask": ask,
             "digits": s.digits,
+            "point": point,
+            "tick_size": tick_size,
+            "tick_value": tick_value,
+            "volume_min": s.volume_min or 0.01,
+            "volume_max": s.volume_max or 100.0,
+            "volume_step": s.volume_step or 0.01,
+            "trade_stops_level": s.trade_stops_level or 0,
             "spread_pips": spread_pips,
             "spread_points": s.spread,
             "contract_size": s.trade_contract_size,
