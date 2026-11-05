@@ -12,15 +12,20 @@ export const NAVIGATION_CONFIG = {
   // Sidebar navigation routes
   links: [
     { name: "Dashboard", href: "/", iconName: "LayoutDashboard" },
-    { name: "Portfolio", href: "/portfolio", iconName: "PieChart" },
-    { name: "Position Volumes", href: "/positions", iconName: "Activity" },
-    { name: "Risk Management", href: "/risk-management", iconName: "ShieldAlert" },
-    { name: "My Assets", href: "/my-assets", iconName: "Bookmark" },
     { name: "Charts", href: "/charts", iconName: "LineChart" },
-    { name: "News & Filter", href: "/news", iconName: "Radio" },
-    { name: "History", href: "/exit-positions", iconName: "History" },
-    { name: "Correlation", href: "/correlation", iconName: "GitCommit" },
+    { name: "Position Volumes", href: "/positions", iconName: "Activity" },
+    {
+      name: "Risk Management",
+      href: "/risk-management",
+      iconName: "ShieldAlert",
+    },
+    { name: "My Assets", href: "/my-assets", iconName: "Bookmark" },
     { name: "Asset List", href: "/assets", iconName: "Layers" },
+    { name: "Portfolio", href: "/portfolio", iconName: "PieChart" },
+    { name: "News & Filter", href: "/news", iconName: "Radio" },
+    { name: "Correlation", href: "/correlation", iconName: "GitCommit" },
+    { name: "Time Window", href: "/time-window", iconName: "Clock" },
+    { name: "History", href: "/exit-positions", iconName: "History" },
   ],
 };
 

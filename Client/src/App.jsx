@@ -11,6 +11,7 @@ import AssetList from "@/pages/AssetList";
 import MyAssets from "@/pages/MyAssets";
 import Charts from "@/pages/Charts";
 import RiskManagement from "@/pages/RiskManagement";
+import TimeWindow from "@/pages/TimeWindow";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
 // Define the router structure
@@ -61,6 +62,10 @@ const router = createBrowserRouter([
       {
         path: "/charts",
         element: <Charts />,
+      },
+      {
+        path: "/time-window",
+        element: <TimeWindow />,
       },
     ],
   },

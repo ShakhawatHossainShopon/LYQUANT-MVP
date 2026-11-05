@@ -11,6 +11,7 @@ import {
   History,
   GitCommit,
   Layers,
+  Clock,
   HelpCircle,
   ChevronRight,
 } from "lucide-react";
@@ -27,6 +28,7 @@ const ICON_MAP = {
   History,
   GitCommit,
   Layers,
+  Clock,
 };
 
 export const Sidebar = () => {
